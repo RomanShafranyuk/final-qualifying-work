@@ -66,28 +66,41 @@ def get_block_id(db_session, data):
     return db_session.query(Block.number_id).where(Block.data == data).all()[0][0]
 
 
-def get_average_time(count_blocks: int):
+# def get_averages(count_blocks: int):
+#     
+#     last_id = db_session.query(Statistic.n_id).select_from(
+#         Statistic).order_by(desc(Statistic.n_id)).limit(1).all()[0][0]
+#     sum = db_session.query(sum_string(Statistic.total_time)).where(
+#         Statistic.n_id >= last_id - count_blocks + 1).all()[0][0]
+#     db_session.close()
+#     return count_blocks, sum / count_blocks
+
+def get_average():
     db_session = create_session()
-    last_id = db_session.query(Timer.n_id).select_from(
-        Timer).order_by(desc(Timer.n_id)).limit(1).all()[0][0]
-    sum = db_session.query(sum_string(Timer.time)).where(
-        Timer.n_id >= last_id - count_blocks + 1).all()[0][0]
-    db_session.close()
-    return count_blocks, sum / count_blocks
+    indexes = db_session.query(Statistic.n_id).where(Statistic.order == 1).all()
+    average_list = []
+    for i in range(0, len(indexes) - 1):
+        queue_time = db_session.query(sum_string(Statistic.queue_time), count(Statistic.queue_time)).where(Statistic.n_id >= indexes[i][0]).where(Statistic.n_id < indexes[i+1][0]).all()
+        average_list.append(queue_time[0][0] / queue_time[0][1])
+    print(average_list)
+        
 
 
-def add_time(name, time):
+
+
+
+def add_statistic(data, stat_element):
     db_session = create_session()
-    n_id = get_block_id(db_session, name)
-    t = Timer(n_id, time)
-    db_session.add(t)
+    n_id = get_block_id(db_session, data)
+    s = Statistic(n_id, stat_element["create_time"], stat_element["queue_time"], stat_element["total_time"], stat_element["order"])
+    db_session.add(s)
     db_session.commit()
     db_session.close()
 
-def clear_tables(db_session):
+def clear_tables(db_session): # !!!!!!!
     db_session.query(Block).filter(Block.number_id > 1).delete()
     db_session.commit()
-    db_session.query(Timer).filter(Timer.n_id > 1).delete()
+    db_session.query(Statistic).filter(Statistic.n_id > 1).delete()
     db_session.commit()
     
 
@@ -109,15 +122,23 @@ class Block(Base):
         self.prev_index = prev_index
 
 
-class Timer(Base):
-    __tablename__ = 'timer'
+class Statistic(Base):
+    __tablename__ = 'statistic'
     n_id = Column(Integer, primary_key=True)
-    time = Column(Float)
+    block_time = Column(Float)
+    queue_time = Column(Float)
+    total_time = Column(Float)
+    order = Column(Integer)
 
-    def __init__(self, n_id, time):
+    def __init__(self, n_id, b_time, q_time, t_time, order):
         self.n_id = n_id
-        self.time = time
+        self.block_time = b_time
+        self.queue_time = q_time
+        self.total_time = t_time
+        self.order = order
+
 
 # session = create_session()
 # init_db(session)
+# get_average()
 # clear_tables(session)

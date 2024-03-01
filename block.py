@@ -53,10 +53,7 @@ def write_block(session, data, prev_hash=''):
                  "prev_index": prev_index}
 
     database.add_block(session, new_block)
-    # end = time.time()
-    # time_to_add = end - start
-    # database.add_time(name, time_to_add)
-
+    
 
 def get_average_time(count_blocks: int):
     _, time_avg = database.get_average_time(count_blocks)
