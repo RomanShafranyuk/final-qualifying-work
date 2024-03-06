@@ -2,12 +2,12 @@ import socket
 import hashlib
 import json
 import data_gen
-SERVER_ADDRESS = 'localhost'
+SERVER_ADDRESS = ('25.18.233.38',7001)
 BLOCK_COUNT = 1000
-BLOCK_SIZE = 100
+BLOCK_SIZE = 1024
 def send_transaction(count_transactions, transaction_size):
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((SERVER_ADDRESS, 12345))
+    client_socket.connect(SERVER_ADDRESS)
     print("Клиент подключился к серверу ")
     print("Начата генерация транзакций")
     transactions = data_gen.generate_block_data(count_transactions, transaction_size)

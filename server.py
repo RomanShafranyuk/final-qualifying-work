@@ -59,7 +59,7 @@ session = database.create_session()
 database.init_db(session)
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(('localhost', 12345))
+server_socket.bind(('25.18.233.38', 7001))
 server_socket.listen(10)
 print("Сервер запущен и ожидает подключений...")
  
