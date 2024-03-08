@@ -1,42 +1,65 @@
 import socket
 from tqdm import tqdm 
+import json
+import sys
 
-SIZE = 512
+PACKAGE_SIZE = 1024
 
-def send_message(msg: str, sock: socket.socket, size:int):
-    global SIZE
-    sock.send(str(size).encode("utf-8"))
-    print(sock.recv(SIZE).decode("utf-8"))
-    bar = tqdm(range(size), f"Отправка транзакций {size} байт", unit="B", unit_scale=True, unit_divisor=SIZE)
+def send_message(sock: socket.socket, transactions: list):
+    """
+    Отправляет набор транзакций по протоколу TCP.
+
+
+            Параметры:
+                    sock (socket.socket) : сокет связи 
+                    transactions (list) : список транзакций для отправки
+    """
+    global PACKAGE_SIZE
+    message = json.dumps(transactions)
+    message_size = sys.getsizeof(message)
+    sock.send(str(message_size).encode("utf-8"))
+    print(sock.recv(PACKAGE_SIZE).decode("utf-8"))
+    bar = tqdm(range(message_size), f"Отправка транзакций {message_size} байт", unit="B", unit_scale=True, unit_divisor=PACKAGE_SIZE)
     start_msg = 0
-    end_msg = SIZE
+    end_msg = PACKAGE_SIZE
 
     while True:
-        data = msg[start_msg:end_msg]
+        data = message[start_msg:end_msg]
         if not data:
             break
         sock.send(data.encode("utf-8"))
-        sock.recv(SIZE).decode("utf-8")
+        sock.recv(PACKAGE_SIZE).decode("utf-8")
         bar.update(len(data))
-        start_msg += SIZE
-        end_msg += SIZE
+        start_msg += PACKAGE_SIZE
+        end_msg += PACKAGE_SIZE
     print("Транзакции успешно отправлены")
 
 def receive_message(sock: socket.socket):
-    global SIZE
+    """
+    Получает сообщение по протоколу TCP.
+
+
+            Параметры:
+                    sock (socket.socket) : сокет связи 
+            
+                    
+            Возвращаемое значение: список транзакций, подписанных хэшем SHA-256
+
+    """
+    global PACKAGE_SIZE
     message = ""
     msg_size = int(sock.recv(4).decode("utf-8"))
-    sock.send(f"Получен размер файла, {msg_size} байт")
-    bar = tqdm(range(msg_size), f"Отправка транзакций {msg_size} байт", unit="B", unit_scale=True, unit_divisor=SIZE)
+    sock.send(f"Получен размер файла, {msg_size} байт".encode("utf-8"))
+    bar = tqdm(range(msg_size), f"Отправка транзакций {msg_size} байт", unit="B", unit_scale=True, unit_divisor=PACKAGE_SIZE)
     while len(message) != msg_size:
-        data = sock.recv(SIZE).decode("utf-8")
+        data = sock.recv(PACKAGE_SIZE).decode("utf-8")
 
         if not data:
             break
         message += data
         sock.send("Получено сообщение".encode("utf-8"))
         bar.update(len(data))
-    return message
+    return json.loads(message)
 
 
     

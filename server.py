@@ -16,9 +16,6 @@ add_time = 0
 def handle_client(sock:socket.socket):
     global transactuin_queue, transactuin_queue_lock, add_time
     transactions = network.receive_message(sock)
-    print(transactions)
-    exit()
-    transactions: list = json.loads(data_from.decode("utf-8"))
     for i in range(len(transactions)):
         if hashlib.sha256(transactions[i][0].encode("utf-8")).hexdigest() == transactions[i][1]:
             time_to_add = time.time()
@@ -81,8 +78,6 @@ try:
 except:
     pass
  
-# Получаем данные от клиента
 
-# Закрываем соединения
 server_socket.close()
 
