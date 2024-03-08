@@ -7,7 +7,7 @@ from sqlalchemy.sql.functions import sum as sum_string
 from sqlalchemy.sql.expression import desc
 
 engine = create_engine(
-    'postgresql+psycopg2://postgres:12345678@127.0.0.1:5432/postgres')
+    'postgresql+psycopg2://postgres:12345678@25.18.233.38:5432/postgres')
 
 
 def create_session():

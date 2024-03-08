@@ -6,16 +6,18 @@ import threading
 import time
 import hashlib
 import json
-
+import network
 transactuin_queue = Queue()
 
 transactuin_queue_lock = threading.Lock()
 add_time = 0
 
 
-def handle_client(sock):
+def handle_client(sock:socket.socket):
     global transactuin_queue, transactuin_queue_lock, add_time
-    data_from = sock.recv(100000000)
+    transactions = network.receive_message(sock)
+    print(transactions)
+    exit()
     transactions: list = json.loads(data_from.decode("utf-8"))
     for i in range(len(transactions)):
         if hashlib.sha256(transactions[i][0].encode("utf-8")).hexdigest() == transactions[i][1]:
