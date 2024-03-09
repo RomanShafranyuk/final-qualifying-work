@@ -3,7 +3,7 @@ from tqdm import tqdm
 import json
 import sys
 
-PACKAGE_SIZE = 1024
+PACKAGE_SIZE = 512
 
 def send_message(sock: socket.socket, transactions: list):
     """
@@ -15,6 +15,7 @@ def send_message(sock: socket.socket, transactions: list):
                     transactions (list) : список транзакций для отправки
     """
     global PACKAGE_SIZE
+    len_packages = []
     message = json.dumps(transactions)
     message_size = sys.getsizeof(message)
     sock.send(str(message_size).encode("utf-8"))
@@ -25,13 +26,15 @@ def send_message(sock: socket.socket, transactions: list):
 
     while True:
         data = message[start_msg:end_msg]
-        if not data:
+        len_packages.append(len(data))
+        if not data or len(data) == 0:
             break
         sock.send(data.encode("utf-8"))
         sock.recv(PACKAGE_SIZE).decode("utf-8")
         bar.update(len(data))
         start_msg += PACKAGE_SIZE
         end_msg += PACKAGE_SIZE
+    print(len_packages)
     print("Транзакции успешно отправлены")
 
 def receive_message(sock: socket.socket):
@@ -47,19 +50,26 @@ def receive_message(sock: socket.socket):
 
     """
     global PACKAGE_SIZE
-    message = ""
+    len_packages = []
+    message = None
     msg_size = int(sock.recv(4).decode("utf-8"))
     sock.send(f"Получен размер файла, {msg_size} байт".encode("utf-8"))
     bar = tqdm(range(msg_size), f"Отправка транзакций {msg_size} байт", unit="B", unit_scale=True, unit_divisor=PACKAGE_SIZE)
-    while len(message) != msg_size:
-        data = sock.recv(PACKAGE_SIZE).decode("utf-8")
-
+    while True:
+        data = sock.recv(PACKAGE_SIZE)
+        len_packages.append(len(data))
         if not data:
             break
-        message += data
+        if message == None:
+            message = data
+        else:
+            message += data
         sock.send("Получено сообщение".encode("utf-8"))
         bar.update(len(data))
-    return json.loads(message)
+    
+    print(f"\n{sys.getsizeof(message)} байт\n")
+    print(len_packages)
+    return json.loads(message.decode("utf-8"))
 
 
     
