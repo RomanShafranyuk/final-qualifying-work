@@ -57,6 +57,18 @@ def get_last_block(db_session):
                                 Block.number_id).select_from(Block).order_by(desc(Block.number_id)).limit(1).all()
     return {"data": response[0][0], "block_hash": response[0][1]}, response[0][2]
 
+def get_queue_time(db_session):
+    response = db_session.query(Statistic.queue_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
+    return response[0][0]
+
+def get_average_block_time(count_blocks, db_session):
+    last_id = db_session.query(Statistic.n_id).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()[0][0]
+    sum = db_session.query(sum_string(Statistic.block_time)).where(Statistic.n_id >= last_id - count_blocks + 1).all()[0][0]
+    db_session.close()
+    return sum / count_blocks
+
+
+
 
 def is_database_empty(db_session):
     return db_session.query(count(Block.number_id)).all()[0][0] == 0
@@ -75,14 +87,14 @@ def get_block_id(db_session, data):
 #     db_session.close()
 #     return count_blocks, sum / count_blocks
 
-def get_average():
-    db_session = create_session()
-    indexes = db_session.query(Statistic.n_id).where(Statistic.order == 1).all()
-    average_list = []
-    for i in range(0, len(indexes) - 1):
-        queue_time = db_session.query(sum_string(Statistic.queue_time), count(Statistic.queue_time)).where(Statistic.n_id >= indexes[i][0]).where(Statistic.n_id < indexes[i+1][0]).all()
-        average_list.append(queue_time[0][0] / queue_time[0][1])
-    print(average_list)
+# def get_average():
+#     db_session = create_session()
+#     indexes = db_session.query(Statistic.n_id).where(Statistic.order == 1).all()
+#     average_list = []
+#     for i in range(0, len(indexes) - 1):
+#         queue_time = db_session.query(sum_string(Statistic.queue_time), count(Statistic.queue_time)).where(Statistic.n_id >= indexes[i][0]).where(Statistic.n_id < indexes[i+1][0]).all()
+#         average_list.append(queue_time[0][0] / queue_time[0][1])
+#     print(average_list)
         
 
 
@@ -138,7 +150,6 @@ class Statistic(Base):
         self.order = order
 
 
-# session = create_session()
-# init_db(session)
-# get_average()
-# clear_tables(session)
+session = create_session()
+init_db(session)
+clear_tables(session)

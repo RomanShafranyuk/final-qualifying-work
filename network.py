@@ -3,7 +3,7 @@ from tqdm import tqdm
 import json
 import sys
 
-PACKAGE_SIZE = 512
+PACKAGE_SIZE = 1024
 
 def send_message(sock: socket.socket, transactions: list):
     """
@@ -28,8 +28,17 @@ def send_message(sock: socket.socket, transactions: list):
         else:
             pack_size = PACKAGE_SIZE
         data = message[ind:ind+pack_size]
-        sock.send(data.encode("utf-8"))
-        sock.recv(PACKAGE_SIZE).decode("utf-8")
+        print(ind, "pack size", pack_size)
+        try:
+            sock.send(data.encode("utf-8"))
+        except TimeoutError:
+            print("Send: timeout")
+
+        print("Data sent, waiting for reply...")
+        try:
+            print(sock.recv(PACKAGE_SIZE).decode("utf-8"))
+        except TimeoutError:
+            print("Recv: timeout")
         bar.update(len(data))
         ind += pack_size
         if ind >= message_size:
@@ -54,9 +63,10 @@ def receive_message(sock: socket.socket):
     message = bytearray()
     msg_size = int.from_bytes(sock.recv(4), 'little')
     sock.send(f"Получен размер файла, {msg_size} байт".encode("utf-8"))
-    bar = tqdm(range(msg_size), f"Отправка транзакций {msg_size} байт", unit="B", unit_scale=True, unit_divisor=PACKAGE_SIZE)
+    bar = tqdm(range(msg_size), f"Отправка транзакций {msg_size} байт")
     while True:
         data = sock.recv(PACKAGE_SIZE)
+        print(len(data))
         if not data:
             break
         len_packages.append(len(data))

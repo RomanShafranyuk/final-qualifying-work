@@ -5,7 +5,6 @@ import block
 import threading
 import time
 import hashlib
-import json
 import network
 transactuin_queue = Queue()
 
@@ -19,12 +18,13 @@ def handle_client(sock:socket.socket):
     for i in range(len(transactions)):
         if hashlib.sha256(transactions[i][0].encode("utf-8")).hexdigest() == transactions[i][1]:
             time_to_add = time.time()
-            transactuin_queue_lock.acquire()
+            # transactuin_queue_lock.acquire()
             transactuin_queue.push({"data": transactions[i][0], "order": i, "add_time": time_to_add})
-            transactuin_queue_lock.release()
+            # transactuin_queue_lock.release()
 
         
     sock.close()
+
 
 def mining():
     global transactuin_queue, transactuin_queue_lock, start_time, start_time_lock,end_time, end_time_lock
@@ -35,7 +35,7 @@ def mining():
         if transactuin_queue.len_queue() !=0:
            
             this_transaction = transactuin_queue.pop()
-            print(this_transaction)
+            # print(this_transaction)
             pop_time = time.time()
             queue_time = pop_time - this_transaction["add_time"]
             statistic_element["queue_time"] = queue_time
@@ -43,7 +43,7 @@ def mining():
 
             start_create_block = time.time()
             block.write_block(session, this_transaction["data"])
-            print("Блок добавлен")
+            # print("Блок добавлен")
             end_create_block = time.time()
             create_time = end_create_block - start_create_block
             statistic_element["create_time"] = create_time

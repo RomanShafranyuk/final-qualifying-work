@@ -2,8 +2,9 @@ import socket
 import hashlib
 import data_gen
 import network
+socket.setdefaulttimeout(2)
 SERVER_ADDRESS = ('25.18.233.38',7001)
-TRANSACTION_COUNT = 1000
+TRANSACTION_COUNT = 7500
 TRANSACTION_SIZE = 1024
 
     
