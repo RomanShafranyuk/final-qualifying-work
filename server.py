@@ -1,12 +1,12 @@
 import socket
 import database
-from MyQueue import Queue
+from MyQueue import MyQueue
 import block
 import threading
 import time
 import hashlib
 import network
-transactuin_queue = Queue()
+transactuin_queue = MyQueue()
 
 transactuin_queue_lock = threading.Lock()
 add_time = 0

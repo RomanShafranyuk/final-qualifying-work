@@ -2,13 +2,36 @@ import json
 import hashlib
 import database
 import datetime
-import time
+import sqlalchemy.orm
 
-def get_hash(block_data):
+
+def get_hash(block_data: dict) -> str:
+    """
+    Формирует связывающий хэш.
+
+
+            Параметры:
+                    block_data (dict) : данные предыдущего блока
+            
+                    
+            Возвращаемое значение: строка хэщ-код предыдущего блока
+
+    """
     return hashlib.sha256(json.dumps(block_data).encode("utf-8")).hexdigest()
 
 
-def calculate_Merkle_root(hashes_list: list):
+def calculate_Merklie_root(hashes_list: list) -> str:
+    """
+    Рассчитывается корень дерева Меркла текущей цепи блокчейна.
+
+
+            Параметры:
+                    hashes_list (list) : список хэшей текущей блокчейн-цепи
+            
+                    
+            Возвращаемое значение: строка хэщ-код корня Меркла
+
+    """
     while len(hashes_list) > 1:
         tmp = []
         if len(hashes_list) % 2 != 0:
@@ -22,16 +45,17 @@ def calculate_Merkle_root(hashes_list: list):
     return hashes_list[0]
 
 
+def write_block(session: sqlalchemy.orm.scoping.scoped_session, data: str):
+    """
+    Формирует новый блок и добавляет его в существующую блокчейн-цепь в базу данных.
 
 
-def get_hash_db(session):
-    data_prev_block = database.get_last_block(session)
-    data_to_json = json.dumps(
-        {'data': data_prev_block[0], 'hash': data_prev_block[1]})
-    return hashlib.sha256(data_to_json.encode("utf-8")).hexdigest(), data_prev_block[2]
+            Параметры:
+                    session (sqlalchemy.orm.scoping.scoped_session) : курсор для запроса к базе данных
+                    data (str) : текущая транзакция
+            
 
-
-def write_block(session, data, prev_hash=''):
+    """
     prev_hash = ''
     prev_index = 0
 
@@ -43,7 +67,7 @@ def write_block(session, data, prev_hash=''):
         prev_hash = get_hash(first_block)
     hash_list = database.get_hashes_list()
     hash_list.append(prev_hash)
-    root = calculate_Merkle_root(hash_list)
+    root = calculate_Merklie_root(hash_list)
     timestrap = datetime.datetime.now().strftime(r'%Y-%m-%d %H:%M:%S')
 
     new_block = {"data": data,
@@ -53,10 +77,3 @@ def write_block(session, data, prev_hash=''):
                  "prev_index": prev_index}
 
     database.add_block(session, new_block)
-    
-
-def get_average_time(count_blocks: int):
-    _, time_avg = database.get_average_time(count_blocks)
-
-    with open('time.txt', "a") as f:
-        f.write(str(count_blocks) + ":" + str(time_avg)+'\n')

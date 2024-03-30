@@ -11,18 +11,32 @@ engine = create_engine(
 
 
 def create_session():
+    """
+    Создает курсор для запросов в базу данных.
+
+
+            Возвращаемое значение: курсор для запросов к базе данных
+            
+
+    """
     return scoped_session(sessionmaker(autocommit=False,
                                        autoflush=False,
                                        bind=engine))
 
 
-# db_session =scoped_session(sessionmaker(autocommit=False,
-#                                        autoflush=False,
-#                                        bind=engine))
 Base = declarative_base()
 
 
 def init_db(db_session):
+    """
+    Создает новое соединение. В случае, если таблицы не были созданы, создает их.
+
+
+            Параметры:
+                    session (sqlalchemy.orm.scoping.scoped_session) : курсор для запроса к базе данных 
+    
+                    
+    """
     Base.query = db_session.query_property()
     Base.metadata.create_all(bind=engine)
 
@@ -31,7 +45,6 @@ def get_hashes_list() -> list:
     session = create_session()
     all_hashes_response = session.query(Block.block_hash).all()
     session.commit()
-    # print(all_hashes_response)
     for i in range(len(all_hashes_response)):
         all_hashes_response[i] = all_hashes_response[i][0]
     return all_hashes_response
@@ -57,8 +70,13 @@ def get_last_block(db_session):
                                 Block.number_id).select_from(Block).order_by(desc(Block.number_id)).limit(1).all()
     return {"data": response[0][0], "block_hash": response[0][1]}, response[0][2]
 
+
 def get_queue_time(db_session):
     response = db_session.query(Statistic.queue_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
+    return response[0][0]
+
+def get_total_time(db_session):
+    response = db_session.query(Statistic.total_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
     return response[0][0]
 
 def get_average_block_time(count_blocks, db_session):
@@ -66,8 +84,6 @@ def get_average_block_time(count_blocks, db_session):
     sum = db_session.query(sum_string(Statistic.block_time)).where(Statistic.n_id >= last_id - count_blocks + 1).all()[0][0]
     db_session.close()
     return sum / count_blocks
-
-
 
 
 def is_database_empty(db_session):
@@ -78,29 +94,6 @@ def get_block_id(db_session, data):
     return db_session.query(Block.number_id).where(Block.data == data).all()[0][0]
 
 
-# def get_averages(count_blocks: int):
-#     
-#     last_id = db_session.query(Statistic.n_id).select_from(
-#         Statistic).order_by(desc(Statistic.n_id)).limit(1).all()[0][0]
-#     sum = db_session.query(sum_string(Statistic.total_time)).where(
-#         Statistic.n_id >= last_id - count_blocks + 1).all()[0][0]
-#     db_session.close()
-#     return count_blocks, sum / count_blocks
-
-# def get_average():
-#     db_session = create_session()
-#     indexes = db_session.query(Statistic.n_id).where(Statistic.order == 1).all()
-#     average_list = []
-#     for i in range(0, len(indexes) - 1):
-#         queue_time = db_session.query(sum_string(Statistic.queue_time), count(Statistic.queue_time)).where(Statistic.n_id >= indexes[i][0]).where(Statistic.n_id < indexes[i+1][0]).all()
-#         average_list.append(queue_time[0][0] / queue_time[0][1])
-#     print(average_list)
-        
-
-
-
-
-
 def add_statistic(data, stat_element):
     db_session = create_session()
     n_id = get_block_id(db_session, data)
@@ -109,13 +102,11 @@ def add_statistic(data, stat_element):
     db_session.commit()
     db_session.close()
 
-def clear_tables(db_session): # !!!!!!!
-    db_session.query(Block).filter(Block.number_id > 1).delete()
-    db_session.commit()
-    db_session.query(Statistic).filter(Statistic.n_id > 1).delete()
-    db_session.commit()
-    
 
+def get_block_data(count_blocls):
+    db_session = create_session()
+    return db_session.query(Block.number_id, Block.prev_index).where(Block.number_id <= count_blocls).all()
+    
 
 class Block(Base):
     __tablename__ = 'blocks'
@@ -150,6 +141,7 @@ class Statistic(Base):
         self.order = order
 
 
-session = create_session()
-init_db(session)
-clear_tables(session)
+# session = create_session()
+# print(type(session))
+# init_db(session)
+# clear_tables(session)

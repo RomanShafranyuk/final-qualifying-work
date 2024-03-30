@@ -66,7 +66,7 @@ def receive_message(sock: socket.socket):
     bar = tqdm(range(msg_size), f"Отправка транзакций {msg_size} байт")
     while True:
         data = sock.recv(PACKAGE_SIZE)
-        print(len(data))
+        #print(len(data))
         if not data:
             break
         len_packages.append(len(data))
@@ -74,6 +74,6 @@ def receive_message(sock: socket.socket):
         sock.send("Получено сообщение".encode("utf-8"))
         bar.update(len(data))
     
-    print(f"\n{sys.getsizeof(message)} байт\n")
-    print(len_packages)
+    #print(f"\n{sys.getsizeof(message)} байт\n")
+    #print(len_packages)
     return json.loads(message.decode("utf-8"))

@@ -1,4 +1,4 @@
-class Queue:
+class MyQueue:
     def __init__(self):
         self.queue = []
 
@@ -6,8 +6,7 @@ class Queue:
     def push(self, item):
         self.queue.append(item)
 
-    def add_blocks(self, blocks):
-        self.queue += blocks
+
 
     def pop(self):
         if len(self.queue) == 0:

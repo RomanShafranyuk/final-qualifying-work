@@ -1,3 +1,4 @@
 *.txt
-*.pyc
+*.рус
+*.png
 __pycache__/*
