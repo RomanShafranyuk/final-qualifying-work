@@ -27,21 +27,23 @@ def create_session():
 Base = declarative_base()
 
 
-def init_db(db_session):
+def init_db():
     """
-    Создает новое соединение. В случае, если таблицы не были созданы, создает их.
-
-
-            Параметры:
-                    session (sqlalchemy.orm.scoping.scoped_session) : курсор для запроса к базе данных 
-    
-                    
+    Создает новое соединение. В случае, если таблицы не были созданы, создает их.         
     """
-    Base.query = db_session.query_property()
+    session = create_session()
+    Base.query = session.query_property()
     Base.metadata.create_all(bind=engine)
+    session.commit()
 
 
 def get_hashes_list() -> list:
+    """
+    Возвращает список всех хэшей блокчейна, связывающих блоки
+
+
+            Возвращаемое значение: список хэшей
+    """
     session = create_session()
     all_hashes_response = session.query(Block.block_hash).all()
     session.commit()
@@ -50,8 +52,8 @@ def get_hashes_list() -> list:
     return all_hashes_response
 
 
-def add_block(db_session, new_block):
-
+def add_block(new_block):
+    session = create_session()
     b = Block(new_block['data'], new_block['block_hash'],
               new_block['Merklies_root'], new_block['timestrap'],
               new_block['prev_index'])
@@ -59,44 +61,58 @@ def add_block(db_session, new_block):
     check_list = []
 
     while len(check_list) == 0:
-        db_session.add(b)
-        db_session.commit()
-        check_list += db_session.query(Block.number_id).select_from(Block).where(
+        session.add(b)
+        session.commit()
+        check_list += session.query(Block.number_id).select_from(Block).where(
             Block.data == new_block['data']).where(Block.block_hash == new_block['block_hash']).all()
+    
 
 
-def get_last_block(db_session):
-    response = db_session.query(Block.data, Block.block_hash,
+def get_last_block():
+    session = create_session()
+    response = session.query(Block.data, Block.block_hash,
                                 Block.number_id).select_from(Block).order_by(desc(Block.number_id)).limit(1).all()
+    session.close()
     return {"data": response[0][0], "block_hash": response[0][1]}, response[0][2]
 
 
-def get_queue_time(db_session):
-    response = db_session.query(Statistic.queue_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
+def get_queue_time():
+    session = create_session()
+    response = session.query(Statistic.queue_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
+    session.close()
     return response[0][0]
 
-def get_total_time(db_session):
-    response = db_session.query(Statistic.total_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
+def get_total_time():
+    session = create_session()
+    response = session.query(Statistic.total_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
+    session.close()
     return response[0][0]
 
-def get_average_block_time(count_blocks, db_session):
-    last_id = db_session.query(Statistic.n_id).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()[0][0]
-    sum = db_session.query(sum_string(Statistic.block_time)).where(Statistic.n_id >= last_id - count_blocks + 1).all()[0][0]
-    db_session.close()
+def get_average_block_time(count_blocks):
+    session = create_session()
+    last_id = session.query(Statistic.n_id).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()[0][0]
+    sum = session.query(sum_string(Statistic.block_time)).where(Statistic.n_id >= last_id - count_blocks + 1).all()[0][0]
+    session.close()
     return sum / count_blocks
 
 
-def is_database_empty(db_session):
-    return db_session.query(count(Block.number_id)).all()[0][0] == 0
+def is_database_empty():
+    session = create_session()
+    logic_result = session.query(count(Block.number_id)).all()[0][0] == 0
+    session.close()
+    return logic_result
 
 
-def get_block_id(db_session, data):
-    return db_session.query(Block.number_id).where(Block.data == data).all()[0][0]
+def get_block_id(data):
+    session = create_session()
+    block_id = session.query(Block.number_id).where(Block.data == data).all()[0][0]
+    session.close()
+    return block_id
 
 
 def add_statistic(data, stat_element):
     db_session = create_session()
-    n_id = get_block_id(db_session, data)
+    n_id = get_block_id(data)
     s = Statistic(n_id, stat_element["create_time"], stat_element["queue_time"], stat_element["total_time"], stat_element["order"])
     db_session.add(s)
     db_session.commit()
@@ -104,8 +120,10 @@ def add_statistic(data, stat_element):
 
 
 def get_block_data(count_blocls):
-    db_session = create_session()
-    return db_session.query(Block.number_id, Block.prev_index).where(Block.number_id <= count_blocls).all()
+    session = create_session()
+    data = session.query(Block.number_id, Block.prev_index).where(Block.number_id <= count_blocls).all()
+    session.close()
+    return data
     
 
 class Block(Base):

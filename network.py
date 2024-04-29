@@ -68,12 +68,12 @@ def receive_message(sock: socket.socket):
         data = sock.recv(PACKAGE_SIZE)
         #print(len(data))
         if not data:
+            bar.update(len(data))
             break
         len_packages.append(len(data))
         message.extend(data)
         sock.send("Получено сообщение".encode("utf-8"))
         bar.update(len(data))
     
-    #print(f"\n{sys.getsizeof(message)} байт\n")
-    #print(len_packages)
+    
     return json.loads(message.decode("utf-8"))

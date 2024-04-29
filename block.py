@@ -2,7 +2,6 @@ import json
 import hashlib
 import database
 import datetime
-import sqlalchemy.orm
 
 
 def get_hash(block_data: dict) -> str:
@@ -45,7 +44,7 @@ def calculate_Merklie_root(hashes_list: list) -> str:
     return hashes_list[0]
 
 
-def write_block(session: sqlalchemy.orm.scoping.scoped_session, data: str):
+def write_block(data: str):
     """
     Формирует новый блок и добавляет его в существующую блокчейн-цепь в базу данных.
 
@@ -59,8 +58,8 @@ def write_block(session: sqlalchemy.orm.scoping.scoped_session, data: str):
     prev_hash = ''
     prev_index = 0
 
-    if database.is_database_empty(session) == False:
-        data_prev_block, prev_index = database.get_last_block(session)
+    if database.is_database_empty() == False:
+        data_prev_block, prev_index = database.get_last_block()
         prev_hash = get_hash(data_prev_block)
     else:
         first_block = {"data": data, "block_hash": prev_hash}
@@ -76,4 +75,4 @@ def write_block(session: sqlalchemy.orm.scoping.scoped_session, data: str):
                  "timestrap": timestrap,
                  "prev_index": prev_index}
 
-    database.add_block(session, new_block)
+    database.add_block(new_block)

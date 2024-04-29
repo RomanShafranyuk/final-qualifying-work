@@ -15,25 +15,24 @@ add_time = 0
 def handle_client(sock:socket.socket):
     global transactuin_queue, transactuin_queue_lock, add_time
     transactions = network.receive_message(sock)
+    transactuin_queue_lock.acquire()
     for i in range(len(transactions)):
         if hashlib.sha256(transactions[i][0].encode("utf-8")).hexdigest() == transactions[i][1]:
             time_to_add = time.time()
-            # transactuin_queue_lock.acquire()
             transactuin_queue.push({"data": transactions[i][0], "order": i, "add_time": time_to_add})
-            # transactuin_queue_lock.release()
-
-        
+    
+    transactuin_queue_lock.release()
     sock.close()
 
 
 def mining():
-    global transactuin_queue, transactuin_queue_lock, start_time, start_time_lock,end_time, end_time_lock
+    global transactuin_queue, transactuin_queue_lock
     statistic_element = {} 
     while True:
         transactuin_queue_lock.acquire()
 
         if transactuin_queue.len_queue() !=0:
-           
+            print("Обнаружены транзакции!")
             this_transaction = transactuin_queue.pop()
             # print(this_transaction)
             pop_time = time.time()
@@ -42,7 +41,7 @@ def mining():
             statistic_element["order"] = this_transaction["order"]
 
             start_create_block = time.time()
-            block.write_block(session, this_transaction["data"])
+            block.write_block(this_transaction["data"])
             # print("Блок добавлен")
             end_create_block = time.time()
             create_time = end_create_block - start_create_block
@@ -54,8 +53,8 @@ def mining():
 
 
 
-session = database.create_session()
-database.init_db(session)
+#session = database.create_session()
+database.init_db()
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind(('25.18.233.38', 7001))
