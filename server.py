@@ -6,22 +6,35 @@ import threading
 import time
 import hashlib
 import network
+import statistic
+import json
 transactuin_queue = MyQueue()
 
 transactuin_queue_lock = threading.Lock()
 add_time = 0
 
-
 def handle_client(sock:socket.socket):
-    global transactuin_queue, transactuin_queue_lock, add_time
-    transactions = network.receive_message(sock)
-    transactuin_queue_lock.acquire()
-    for i in range(len(transactions)):
-        if hashlib.sha256(transactions[i][0].encode("utf-8")).hexdigest() == transactions[i][1]:
-            time_to_add = time.time()
-            transactuin_queue.push({"data": transactions[i][0], "order": i, "add_time": time_to_add})
-    
-    transactuin_queue_lock.release()
+    global transactuin_queue, transactuin_queue_lock, add_time, COUNT_TRANSACTION
+    while True:
+        command = network.receive_command(sock)
+        if command == "SERV":
+            transactions = network.receive_message(sock)
+            transactuin_queue_lock.acquire()
+            for i in range(len(transactions)):
+                if hashlib.sha256(transactions[i][0].encode("utf-8")).hexdigest() == transactions[i][1]:
+                    time_to_add = time.time()
+                    transactuin_queue.push({"data": transactions[i][0], "order": i, "add_time": time_to_add})
+            transactuin_queue_lock.release()
+        elif command == "STAT":
+            count = int.from_bytes(sock.recv(4), 'little')
+            stat = json.dumps(statistic.get_average_time(count))
+            sock.send(stat.encode("utf-8"))
+        elif command == "DRAW":
+            count_elements = database.get_count_block()
+            data = database.get_block_data(count_elements)
+            network.send_message(sock, data)
+        elif command == "EXIT":
+            break
     sock.close()
 
 
@@ -30,9 +43,9 @@ def mining():
     statistic_element = {} 
     while True:
         transactuin_queue_lock.acquire()
-
+        
         if transactuin_queue.len_queue() !=0:
-            print("Обнаружены транзакции!")
+            print(transactuin_queue.len_queue())
             this_transaction = transactuin_queue.pop()
             # print(this_transaction)
             pop_time = time.time()

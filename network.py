@@ -4,6 +4,11 @@ import json
 import sys
 
 PACKAGE_SIZE = 1024
+def send_command(sock: socket.socket, command:str):
+    sock.send(command.encode("utf-8"))
+
+def receive_command(sock:socket.socket):
+    return sock.recv(4).decode("utf-8")
 
 def send_message(sock: socket.socket, transactions: list):
     """
@@ -15,11 +20,11 @@ def send_message(sock: socket.socket, transactions: list):
                     transactions (list) : список транзакций для отправки
     """
     global PACKAGE_SIZE
-    message = json.dumps(transactions) # msg string
+    message = json.dumps(transactions) 
     message_size = sys.getsizeof(message)
-    sock.send(message_size.to_bytes(4, 'little')) # send message size
-    print(sock.recv(PACKAGE_SIZE).decode("utf-8")) # recv system message
-    bar = tqdm(range(message_size), f"Отправка транзакций {message_size} байт")#, unit="B", unit_scale=True, unit_divisor=PACKAGE_SIZE)
+    sock.send(message_size.to_bytes(4, 'little'))
+    print(sock.recv(PACKAGE_SIZE).decode("utf-8")) 
+    bar = tqdm(range(message_size), f"Отправка транзакций {message_size} байт")
 
     ind = 0
     while True:
@@ -28,22 +33,22 @@ def send_message(sock: socket.socket, transactions: list):
         else:
             pack_size = PACKAGE_SIZE
         data = message[ind:ind+pack_size]
-        print(ind, "pack size", pack_size)
+        # print(ind, "pack size", pack_size)
         try:
             sock.send(data.encode("utf-8"))
         except TimeoutError:
             print("Send: timeout")
 
-        print("Data sent, waiting for reply...")
+        # print("Data sent, waiting for reply...")
         try:
-            print(sock.recv(PACKAGE_SIZE).decode("utf-8"))
+            sock.recv(PACKAGE_SIZE).decode("utf-8")
         except TimeoutError:
             print("Recv: timeout")
         bar.update(len(data))
         ind += pack_size
         if ind >= message_size:
             break
-    
+    sock.send("END".encode("utf-8"))
     print(f"{message_size}, {ind}\n Транзакции успешно отправлены")
 
 def receive_message(sock: socket.socket):
@@ -67,7 +72,7 @@ def receive_message(sock: socket.socket):
     while True:
         data = sock.recv(PACKAGE_SIZE)
         #print(len(data))
-        if not data:
+        if data.decode("utf-8") == "END": 
             bar.update(len(data))
             break
         len_packages.append(len(data))

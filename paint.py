@@ -1,11 +1,11 @@
 import graphviz
 import database
 
-def get_graph(count_elements):
+def get_graph(data):
     dot = graphviz.Graph(format="png")
-    data = database.get_block_data(count_elements)
+    
     print(data)
-    for i in range(count_elements):
+    for i in range(len(data)):
         dot.node(str(data[i][0]))
         if data[i][1] != 0:
             dot.edge(str(data[i][0]), str(data[i][1]))
@@ -21,4 +21,4 @@ def get_graph(count_elements):
 
 
 # dot.render(directory='.', view=True) 
-get_graph(10)
+# get_graph(10)

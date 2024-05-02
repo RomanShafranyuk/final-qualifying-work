@@ -1,4 +1,5 @@
 *.txt
 *.рус
 *.png
+*.json
 __pycache__/*

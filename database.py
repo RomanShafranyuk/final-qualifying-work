@@ -98,6 +98,7 @@ def get_average_block_time(count_blocks):
 
 def is_database_empty():
     session = create_session()
+    print(session.query(count(Block.number_id)).all()[0][0])
     logic_result = session.query(count(Block.number_id)).all()[0][0] == 0
     session.close()
     return logic_result
@@ -124,11 +125,25 @@ def get_block_data(count_blocls):
     data = session.query(Block.number_id, Block.prev_index).where(Block.number_id <= count_blocls).all()
     session.close()
     return data
+
+def get_count_block():
+    session = create_session()
+    count_elements = session.query(count(Block.number_id)).all()[0][0]
+    session.close()
+    return count_elements
+
+def clear_tables():
+    session = create_session()
+    session.query(Block).delete()
+    session.commit()
+    session.query(Statistic).delete()
+    session.commit()
+    session.close()
     
 
 class Block(Base):
     __tablename__ = 'blocks'
-    number_id = Column(Integer, primary_key=True)
+    number_id = Column(Integer, primary_key=True, autoincrement=True)
     data = Column(String(100000), nullable=True)
     block_hash = Column(String(100), nullable=True)
     Merklies_root = Column(String(100), nullable=True)
@@ -160,6 +175,6 @@ class Statistic(Base):
 
 
 # session = create_session()
-# print(type(session))
-# init_db(session)
-# clear_tables(session)
+# # print(type(session))
+# init_db()
+# clear_tables()
