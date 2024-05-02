@@ -98,7 +98,7 @@ def get_average_block_time(count_blocks):
 
 def is_database_empty():
     session = create_session()
-    print(session.query(count(Block.number_id)).all()[0][0])
+    # print(session.query(count(Block.number_id)).all()[0][0])
     logic_result = session.query(count(Block.number_id)).all()[0][0] == 0
     session.close()
     return logic_result

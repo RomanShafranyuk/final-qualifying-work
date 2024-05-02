@@ -3,7 +3,7 @@ from tqdm import tqdm
 import json
 import sys
 
-PACKAGE_SIZE = 1024
+PACKAGE_SIZE = 2048
 def send_command(sock: socket.socket, command:str):
     sock.send(command.encode("utf-8"))
 

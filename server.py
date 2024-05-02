@@ -45,7 +45,7 @@ def mining():
         transactuin_queue_lock.acquire()
         
         if transactuin_queue.len_queue() !=0:
-            print(transactuin_queue.len_queue())
+            # print(transactuin_queue.len_queue())
             this_transaction = transactuin_queue.pop()
             # print(this_transaction)
             pop_time = time.time()
