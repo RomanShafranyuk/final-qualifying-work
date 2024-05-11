@@ -30,7 +30,7 @@ def generate_transactuins_list(count_transactions: int, transactions_size: int) 
             Возвращаемое значение: список транзакций длиной count_transactions
 
     """
-    result = []
+    transactions_list = []
     for _ in range(count_transactions):
-        result.append(get_random_string(transactions_size))
-    return result
+        transactions_list.append(get_random_string(transactions_size))
+    return transactions_list

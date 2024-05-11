@@ -10,12 +10,12 @@ engine = create_engine(
     'postgresql+psycopg2://postgres:12345678@25.18.233.38:5432/postgres')
 
 
-def create_session():
+def create_session()->scoped_session:
     """
     Создает курсор для запросов в базу данных.
 
 
-            Возвращаемое значение: курсор для запросов к базе данных
+            Возвращаемое значение: курсор для запросов к базе данных.
             
 
     """
@@ -39,10 +39,10 @@ def init_db():
 
 def get_hashes_list() -> list:
     """
-    Возвращает список всех хэшей блокчейна, связывающих блоки
+    Возвращает список всех хэшей блокчейна, связывающих блоки.
 
 
-            Возвращаемое значение: список хэшей
+            Возвращаемое значение: список хэшей.
     """
     session = create_session()
     all_hashes_response = session.query(Block.block_hash).all()
@@ -52,7 +52,16 @@ def get_hashes_list() -> list:
     return all_hashes_response
 
 
-def add_block(new_block):
+def add_block(new_block:dict):
+    """
+    Добавляет сформированный блок в базу данных.
+
+
+            Параметры:
+                    new_block (dict) : данные нового блока.
+            
+
+    """
     session = create_session()
     b = Block(new_block['data'], new_block['block_hash'],
               new_block['Merklies_root'], new_block['timestrap'],
@@ -64,81 +73,150 @@ def add_block(new_block):
         session.add(b)
         session.commit()
         check_list += session.query(Block.number_id).select_from(Block).where(
-            Block.data == new_block['data']).where(Block.block_hash == new_block['block_hash']).all()
-    
+            Block.data == new_block['data']).where(Block.block_hash == new_block['block_hash']).all()   
 
 
-def get_last_block():
+def get_last_block()->dict:
+    """
+    Возвращает данные последнего блока.
+
+
+            Возвращаемое значение: словарь с данными последнего блока.
+    """
     session = create_session()
     response = session.query(Block.data, Block.block_hash,
                                 Block.number_id).select_from(Block).order_by(desc(Block.number_id)).limit(1).all()
-    session.close()
+    session.commit()
     return {"data": response[0][0], "block_hash": response[0][1]}, response[0][2]
 
 
-def get_queue_time():
+def get_queue_time()->float:
+    """
+    Возвращает время разблра очереди.
+
+
+            Возвращаемое значение: время разбора очереди.
+    """
     session = create_session()
     response = session.query(Statistic.queue_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
-    session.close()
+    session.commit()
     return response[0][0]
 
-def get_total_time():
+
+def get_total_time()->float:
+    """
+    Возвращает время работы системы.
+
+
+            Возвращаемое значение: время работы системы.
+    """
     session = create_session()
     response = session.query(Statistic.total_time).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()
-    session.close()
+    session.commit()
     return response[0][0]
 
-def get_average_block_time(count_blocks):
+
+def get_average_block_time(count_blocks:int)-> float:
+    """
+    Возвращает среднее время пребывания заявки в очереди.
+
+
+            Параметры:
+                    count_blocks (int) : количество блоков, по которому рассчитывается время.
+            
+                    
+            Возвращаемое значение: среднее время пребывания заявки в очереди.
+
+    """
     session = create_session()
     last_id = session.query(Statistic.n_id).select_from(Statistic).order_by(desc(Statistic.n_id)).limit(1).all()[0][0]
     sum = session.query(sum_string(Statistic.block_time)).where(Statistic.n_id >= last_id - count_blocks + 1).all()[0][0]
-    session.close()
+    session.commit()
     return sum / count_blocks
 
 
-def is_database_empty():
+def is_database_empty()->bool:
+    """
+    Возвращает информацию о том, пустая ли в данный момент база данных.
+
+
+            Возвращаемое значение: логическое значение пустоты базы данных.
+    """
     session = create_session()
-    # print(session.query(count(Block.number_id)).all()[0][0])
     logic_result = session.query(count(Block.number_id)).all()[0][0] == 0
-    session.close()
+    session.commit()
     return logic_result
 
 
-def get_block_id(data):
+def get_block_id(data:str)->int:
+    """
+    Возвращает номер блока с транзакцией data.
+
+
+            Параметры:
+                    data (str) : данные блока.
+            
+                    
+            Возвращаемое значение: номер блока.
+
+    """
     session = create_session()
     block_id = session.query(Block.number_id).where(Block.data == data).all()[0][0]
-    session.close()
+    session.commit()
     return block_id
 
 
-def add_statistic(data, stat_element):
+
+def add_statistic(data:str, stat_element:dict):
+    """
+    Добавляет статистику в базу данных.
+
+
+            Параметры:
+                    data (str) : данные блока;
+                    stat_element (dict): статистика.
+            
+
+    """
     db_session = create_session()
     n_id = get_block_id(data)
     s = Statistic(n_id, stat_element["create_time"], stat_element["queue_time"], stat_element["total_time"], stat_element["order"])
     db_session.add(s)
     db_session.commit()
-    db_session.close()
 
 
-def get_block_data(count_blocls):
+def get_block_data(count_blocks:int)->list:
+    """
+    Возвращает информацию о блокчейн-цепи.
+
+
+            Параметры:
+                    count_blocks (int) : количество блоков.
+            
+                    
+            Возвращаемое значение: список блоков и их связей.
+
+    """
     session = create_session()
-    data = session.query(Block.number_id, Block.prev_index).where(Block.number_id <= count_blocls).all()
-    session.close()
-    return data
+    data = session.query(Block.number_id, Block.prev_index).where(Block.number_id <= count_blocks).all()
+    for i in range (len(data)):
+        data[i] = tuple(data[i])
+    session.commit()
+    return list(data)
 
-def get_count_block():
+
+def get_count_block()->int:
+    """
+    Возвращает количество блоков.
+
+                
+            Возвращаемое значение: количество блоков.
+
+    """
     session = create_session()
     count_elements = session.query(count(Block.number_id)).all()[0][0]
-    session.close()
+    session.commit()
     return count_elements
-
-def clear_tables():
-    session = create_session()
-    session.query(Block).delete()
-    session.commit()
-    session.query(Statistic).delete()
-    session.commit()
-    session.close()
     
 
 class Block(Base):
@@ -174,7 +252,4 @@ class Statistic(Base):
         self.order = order
 
 
-# session = create_session()
-# # print(type(session))
-# init_db()
-# clear_tables()
+

@@ -50,7 +50,6 @@ def write_block(data: str):
 
 
             Параметры:
-                    session (sqlalchemy.orm.scoping.scoped_session) : курсор для запроса к базе данных
                     data (str) : текущая транзакция
             
 
